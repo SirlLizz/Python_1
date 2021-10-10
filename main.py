@@ -3,6 +3,7 @@ import os
 import hashlib
 import re
 import requests
+import csv
 
 # Задание №1
 
@@ -99,58 +100,63 @@ for line in lines:
     # извлечение заголовков таблицы
     if counter == 0:
         # Удаление тегов
-        headers = re.sub(..., ..., line)
+        headers = re.sub('<.*?>', ' ', line)
         # Извлечение списка заголовков
-        headers = re.findall(..., headers)
+        headers = re.findall(r'Заболели|Умерли|Вылечились|Активные случаи', headers)
+        print(headers)
+    else:
+        # Удаление тегов
+        # Значения в таблице, заключенные в скобках, не учитывать.
+        # Для этого удалить скобки и символы между ними.
+        # Замена последовательности символов ';' на одиночный символ
+        # Удаление символа ';' в начале и в конце строки
+        temp = re.sub('<.*?>', ';', line)
+        temp = re.sub("\(.*?\)", '', temp)
+        temp = re.sub(';+', ';', temp)
+        temp = temp[1: len(temp) - 1]
+        temp = re.sub('\s(?=\d)', '', temp)
+        temp = re.sub('(?<=\d)\s', '', temp)
+        temp = re.sub('(?<=0)\*', '', temp)
+        temp = re.sub('_', '-1', temp)
 
-        # TODO
+        # Разбитие строки на подстроки
+        tmp_split = temp.split(';')
+        if len(tmp_split) == 6:
+            tmp_split.pop(0)
 
-    # Удаление тегов
-    temp = re.sub(..., ';', line)
-    # Значения в таблице, заключенные в скобках, не учитывать. Для этого удалить скобки и символы между ними.
-    temp = ...
-    # Замена последовательности символов ';' на одиночный символ
-    temp = ...
-    # Удаление символа ';' в начале и в конце строки
+        # Извлечение и обработка (удаление "лишних" символов) данных из первого столбца
+        country_name = tmp_split[0]
+        country_name = re.sub('.*\s\s', '', country_name)
 
-    # TODO
+        # Извлечение данных из оставшихся столбцов. Данные из этих столбцов должны иметь числовое значение
+        # (прочерк можно заменить на -1).
+        # Некоторые строки содержат пробелы в виде символа '\xa0'.
+        col1_val = tmp_split[1]
+        col2_val = tmp_split[2]
+        col3_val = tmp_split[3]
+        col4_val = tmp_split[4]
 
-    # Разбитие строки на подстроки
-    tmp_split = ...
-
-    # Извлечение и обработка (удаление "лишних" символов) данных из первого столбца
-    country_name = tmp_split[0]
-
-    # TODO
-
-    # Извлечение данных из оставшихся столбцов. Данные из этих столбцов должны иметь числовое значение (прочерк можно заменить на -1).
-    # Некоторые строки содержат пробелы в виде символа '\xa0'.
-    col1_val = ...
-    col2_val = ...
-    col3_val = ...
-    col4_val = ...
-
-    # Запись извлеченных данных в словарь
-    result_dct[country_name] = ...
-    result_dct[country_name][...] = int(col1_val)
-    result_dct[country_name][...] = int(col2_val)
-    result_dct[country_name][...] = int(col3_val)
-    result_dct[country_name][...] = int(col4_val)
+        # Запись извлеченных данных в словарь
+        result_dct[country_name] = [0, 0, 0, 0]
+        result_dct[country_name][0] = int(col1_val)
+        result_dct[country_name][1] = int(col2_val)
+        result_dct[country_name][2] = int(col3_val)
+        result_dct[country_name][3] = int(col4_val)
 
     counter += 1
 
-    # Задание №5
-    # Запись данных из полученного словаря в файл
-    output = open('data.csv', 'w')
-    for key in result_dct.keys():
+# Задание №5
+# Запись данных из полученного словаря в файл
+output = open('data.csv', 'w')
+w = csv.writer(output, delimiter=";")
+w.writerow(headers)
+for key in result_dct.keys():
+    w.writerow([key, result_dct[key][0], result_dct[key][1], result_dct[key][2], result_dct[key][3]])
+output.close()
 
-    # TODO
+# Задание №6
+# Вывод данных на экран для указанного первичного ключа (первый столбец таблицы)
 
-    output.close()
+target_country = input("Введите название страны: ")
+print(result_dct[target_country])
 
-    # Задание №6
-    # Вывод данных на экран для указанного первичного ключа (первый столбец таблицы)
-
-    target_country = input("Введите название страны: ")
-
-    # TODO
